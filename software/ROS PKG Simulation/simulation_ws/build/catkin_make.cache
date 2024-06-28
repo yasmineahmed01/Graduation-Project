@@ -1,0 +1,2 @@
+initial_pose_publisher:lab_4:project_4:wheelchair_simulation
+-DCATKIN_DEVEL_PREFIX=/home/mai/mai_ws/devel -DCMAKE_INSTALL_PREFIX=/home/mai/mai_ws/install -G Unix Makefiles

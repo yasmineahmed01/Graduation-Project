@@ -1,0 +1,8 @@
+prefix=/home/mai/mai_ws/devel
+
+Name: wheelchair_simulation
+Description: Description of wheelchair_simulation
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib -lwheelchair_simulation
+Requires: gazebo_ros geometry_msgs nav_msgs roscpp rospy sensor_msgs std_msgs tf

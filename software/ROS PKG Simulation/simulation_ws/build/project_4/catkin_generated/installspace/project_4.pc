@@ -1,0 +1,8 @@
+prefix=/home/mai/mai_ws/install
+
+Name: project_4
+Description: Description of project_4
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

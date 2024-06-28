@@ -1,0 +1,135 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!--  <param name="robot_description" command="$(find xacro)/xacro '$(find project_4)/urdf/wc_final_urdf.urdf'"/> -->
+  <!-- y7wl el xacro file bt3 el urdf l file 22dr aft7o 3la gazebo --> 
+   <arg
+        name="model" />
+    <param
+        name="robot_description"
+        textfile="$(find project_4)/urdf/wc_final_urdf.urdf" />
+
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">  <!-- pt pbulsih el states bt3 kol joint -->
+        <param name="use_gui" value="False" />
+
+
+    </node>
+
+
+
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find lab_4)/rviz/config.rviz" />
+
+
+ 
+  <arg name="x_pos" default="0.0"/>
+  <arg name="y_pos" default="0.0"/>
+  <arg name="z_pos" default="0.0"/>
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find wheelchair_simulation)/worlds/hospital.world"/>
+    <arg name="paused" value="false"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui" value="true"/>
+    <arg name="headless" value="false"/>
+    <arg name="debug" value="false"/>
+  </include>
+
+
+    <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
+    <!-- Spawn the new robot model in Gazebo -->
+   
+   <!-- <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -model rrbot -param robot_description" /> -->
+
+  <node
+        name="spawn_model"
+        pkg="gazebo_ros"
+        type="spawn_model"
+        args="-file $(find project_4)/urdf/wc_final_urdf.urdf -urdf -model wc_final_urdf -z 0.227675"
+        output="screen" />
+         <node
+        name="fake_joint_calibration"
+        pkg="rostopic"
+        type="rostopic"
+        args="pub /calibrated std_msgs/Bool true" />
+        
+        
+        
+   	 <node pkg="tf" type="static_transform_publisher" name="chassis_to_base_frame" 
+        args="0 0 0 0 0 0 1 base_footprint base_link 100" /> <!-- el 100 de hyb3t wa y publish el transfromation kol ad eh millisec wa el child howa el chassis wa el paren t howa el base frame ely howa base footprint-->
+  	
+       
+    <!-- 
+    <node name="mapping" pkg="gmapping" type="slam_gmapping">
+        <remap from="scan" to="/laser/scan" />
+        <param name="base_frame" value="base_footprint" />
+
+    
+    </node> 
+           -->
+    
+   <node name="map_server" pkg="map_server" type="map_server" args="$(find lab_4)/maps/mymap.yaml"/>
+
+
+   <node name="amcl" pkg="amcl" type="amcl">
+       <remap from="scan" to="/laser/scan"/>
+       <param name="base_frame_id" value="base_link"/>
+       <param name="odom_frame_id" value="odom"/>
+         <remap from="odom" to="/robot_pose_ekf/odom_combined"/> <!--/odometry/filtered-->
+       <param name="global_frame_id" value="map"/>
+  </node>
+  
+   
+     
+ 
+ 
+<!-- Extended Kalman Filter from robot_pose_ekf Node-->
+  <!-- Subscribe: /odom, /imu_data, /vo -->
+  <!-- Publish: /robot_pose_ekf/odom_combined -->
+  <remap from="imu_data" to="imu" />
+  <node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf">
+    <param name="output_frame" value="odom"/>
+    <param name="base_footprint_frame" value="base_footprint"/>
+    <param name="freq" value="30.0"/>
+    <param name="sensor_timeout" value="1.0"/>
+    <param name="odom_used" value="true"/>
+    <param name="imu_used" value="true"/>
+    <param name="vo_used" value="false"/>
+    <param name="gps_used" value="false"/>
+    <param name="debug" value="false"/>
+    <param name="self_diagnose" value="false"/>
+  </node>
+	 
+ 
+  <arg name="odom_frame_id"   default="odom"/>
+  <arg name="base_frame_id"   default="base_footprint"/>
+  <arg name="global_frame_id" default="map"/>
+  <arg name="odom_topic" default="odom" />
+  <arg name="laser_topic" default="scan" />
+  <arg name="custom_param_file" default="$(find lab_4)/config/dummy.yaml"/>
+  
+   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <rosparam file="$(find lab_4)/config/costmap_common_params.yaml" command="load" ns="global_costmap" /> 
+    <rosparam file="$(find lab_4)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find lab_4)/config/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find lab_4)/config/global_costmap_params.yaml" command="load" /> 
+    <!--     <rosparam file="$(find lab_4)/config/planner.yaml" command="load"/>    -->
+
+    <!--<rosparam file="$(find lab_4)/config/base_local_planner_params.yaml" command="load" />-->
+    <rosparam file="$(find lab_4)/config/dwa_local_planner_params.yaml" command="load" />
+    <rosparam file="$(find lab_4)/config/global_planner.yaml" command="load" />
+    <rosparam file="$(find lab_4)/config/move_base_params.yaml" command="load" />
+
+
+    <param name="global_costmap/global_frame" value="$(arg global_frame_id)"/>
+    <param name="global_costmap/robot_base_frame" value="$(arg base_frame_id)"/>
+    <param name="local_costmap/global_frame" value="$(arg odom_frame_id)"/>
+    <param name="local_costmap/robot_base_frame" value="$(arg base_frame_id)"/>
+    <param name="DWAPlannerROS/global_frame_id" value="$(arg odom_frame_id)"/>    
+    
+   </node>
+    
+
+
+</launch> 
